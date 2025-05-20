@@ -17,6 +17,7 @@ jobs:
           echo "" >> resumen.md
           git fetch origin main
           git log origin/main -n 5 --pretty=format:"- %h %s (%an, %ad)" --date=short >> resumen.md
+          cat resumen.md
 
       - name: Escapar contenido Markdown para JSON
         id: prepare_body
