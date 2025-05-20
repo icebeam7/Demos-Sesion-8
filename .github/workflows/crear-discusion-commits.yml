@@ -19,7 +19,7 @@ jobs:
           git log origin/main -n 5 --pretty=format:"- %h %s (%an, %ad)" --date=short >> resumen.md
 
       - name: Escapar contenido Markdown para JSON
-        id: preparar_body
+        id: prepare_body
         run: |
           BODY=$(jq -Rs . < resumen.md)
           echo "body=$BODY" >> $GITHUB_OUTPUT
@@ -51,18 +51,17 @@ jobs:
           GH_TOKEN: ${{ secrets.MY_PERSONAL_ACCESS_TOKEN }}
           REPO_ID: ${{ steps.get_repo_id.outputs.repository_id }}
           CATEGORY_ID: ${{ secrets.DISCUSSION_CATEGORY_ID }}
+        id: create-discussion
+        uses: abirismyname/create-discussion@main   
+        with:
+          title: "Resumen de commits - $(date +'%Y-%m-%d %H:%M:%S')"
+          body: ${{ steps.prepare_body.outputs.body }}
+          repository-id: $REPO_ID
+          category-id: $CATEGORY_ID
+          github-token: $GH_TOKEN
+  
+      - name: Print discussion url and id
         run: |
-          TITLE="Resumen de commits - $(date +'%Y-%m-%d %H:%M:%S')"
-          BODY=${{ steps.preparar_body.outputs.body }}
+          echo discussion-id: ${{steps.create-discussion.outputs.discussion-id}} 
+          echo discussion-url: ${{steps.create-discussion.outputs.discussion-url}}
 
-          MUTATION=$(cat <<EOF
-          {
-            "query": "mutation { createDiscussion(input: { repositoryId: \\"$REPO_ID\\", categoryId: \\"$CATEGORY_ID\\", title: \\"$TITLE\\", body: $BODY }) { discussion { url } } }"
-          } 
-          EOF
-          )
-
-          curl -s -H "Authorization: bearer $GH_TOKEN" \
-               -H "Content-Type: application/json" \
-               -d "$MUTATION" \
-               https://api.github.com/graphql
