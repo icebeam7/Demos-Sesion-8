@@ -23,6 +23,7 @@ jobs:
           echo "" >> $SUMMARY_FILE
           git fetch origin main
           git log origin/main -n 5 --pretty=format:"- %h %s (%an, %ad)" --date=short >> $SUMMARY_FILE
+          echo $SUMMARY_FILE
 
       - name: Obtener repositoryId con GraphQL
         id: get_repo_id
@@ -55,7 +56,7 @@ jobs:
         uses: abirismyname/create-discussion@main   
         with:
           title: "Resumen de commits - ${{ steps.get_datetime.outputs.now }}"
-          body-filepath: $SUMMARY_FILE
+          body-filepath: ${{ env.SUMMARY_FILE }}
           repository-id: ${{ steps.get_repo_id.outputs.repository_id }}
           category-id: ${{ secrets.DISCUSSION_CATEGORY_ID }}
           github-token: ${{ secrets.MY_PERSONAL_ACCESS_TOKEN }}
