@@ -35,7 +35,8 @@ jobs:
           QUERY=$(cat <<EOF
           {
             "query": "query { repository(owner: \\"$REPO_OWNER\\", name: \\"$REPO_NAME\\") { id } }"
-          } EOF
+          } 
+          EOF
           )
 
           REPO_ID=$(curl -s -H "Authorization: bearer $GH_TOKEN" \
@@ -57,7 +58,8 @@ jobs:
           MUTATION=$(cat <<EOF
           {
             "query": "mutation { createDiscussion(input: { repositoryId: \\"$REPO_ID\\", categoryId: \\"$CATEGORY_ID\\", title: \\"$TITLE\\", body: $BODY }) { discussion { url } } }"
-          } EOF
+          } 
+          EOF
           )
 
           curl -s -H "Authorization: bearer $GH_TOKEN" \
