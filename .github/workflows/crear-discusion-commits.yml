@@ -47,18 +47,14 @@ jobs:
           echo "repository_id=$REPO_ID" >> $GITHUB_OUTPUT
 
       - name: Crear discusión con resumen de commits
-        env:
-          GH_TOKEN: ${{ secrets.MY_PERSONAL_ACCESS_TOKEN }}
-          REPO_ID: ${{ steps.get_repo_id.outputs.repository_id }}
-          CATEGORY_ID: ${{ secrets.DISCUSSION_CATEGORY_ID }}
         id: create-discussion
         uses: abirismyname/create-discussion@main   
         with:
           title: "Resumen de commits - $(date +'%Y-%m-%d %H:%M:%S')"
           body: ${{ steps.prepare_body.outputs.body }}
-          repository-id: $REPO_ID
-          category-id: $CATEGORY_ID
-          github-token: $GH_TOKEN
+          repository-id: ${{ steps.get_repo_id.outputs.repository_id }}
+          category-id: ${{ secrets.DISCUSSION_CATEGORY_ID }}
+          github-token: ${{ secrets.MY_PERSONAL_ACCESS_TOKEN }}
   
       - name: Print discussion url and id
         run: |
