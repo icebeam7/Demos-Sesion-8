@@ -16,17 +16,17 @@ jobs:
 
       - name: Obtener últimos 5 commits y guardar como Markdown
         run: |
-          echo # Últimos 5 commits de la rama main > resumen.md
+          echo "# Últimos 5 commits de la rama main" > resumen.md
           echo "" >> resumen.md
           git fetch origin main
           git log origin/main -n 5 --pretty=format:"- %h %s (%an, %ad)" --date=short >> resumen.md
           cat resumen.md
 
-      - name: Escapar contenido Markdown para JSON
-        id: prepare_body
-        run: |
-          BODY=$(jq -Rs . < resumen.md)
-          echo "body=$BODY" >> $GITHUB_OUTPUT
+#      - name: Escapar contenido Markdown para JSON
+#        id: prepare_body
+#        run: |
+#          BODY=$(jq -Rs . < resumen.md)
+#          echo "body=$BODY" >> $GITHUB_OUTPUT
 
       - name: Obtener repositoryId con GraphQL
         id: get_repo_id
