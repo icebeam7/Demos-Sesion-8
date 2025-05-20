@@ -48,13 +48,13 @@ jobs:
 
       - name: Obtener fecha y hora actual
         id: get_datetime
-        run: echo "dt=$(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_OUTPUT
+        run: echo "now=$(date +'%Y-%m-%dT%H:%M:%S')" >> $GITHUB_OUTPUT
 
       - name: Crear discusión con resumen de commits
         id: create-discussion
         uses: abirismyname/create-discussion@main   
         with:
-          title: "Resumen de commits - $ {{ steps.get_datetime.dt }}"
+          title: "Resumen de commits - ${{ steps.get_datetime.outputs.now }}"
           body: ${{ steps.prepare_body.outputs.body }}
           repository-id: ${{ steps.get_repo_id.outputs.repository_id }}
           category-id: ${{ secrets.DISCUSSION_CATEGORY_ID }}
