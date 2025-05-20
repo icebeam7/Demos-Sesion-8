@@ -6,6 +6,8 @@ on:
 jobs:
   crear-discusion:
     runs-on: ubuntu-latest
+    env: 
+      SUMMARY_FILE : ${{ vars.SUMMARY_FILE }}
 
     steps:
       - name: Checkout del repositorio
@@ -17,10 +19,10 @@ jobs:
       - name: Obtener últimos 5 commits y guardar como Markdown
         id: get_commits
         run: |
-          echo "# Últimos 5 commits de la rama main" > resumen.md
-          echo "" >> resumen.md
+          echo "# Últimos 5 commits de la rama main" > $SUMMARY_FILE
+          echo "" >> $SUMMARY_FILE
           git fetch origin main
-          git log origin/main -n 5 --pretty=format:"- %h %s (%an, %ad)" --date=short >> resumen.md
+          git log origin/main -n 5 --pretty=format:"- %h %s (%an, %ad)" --date=short >> $SUMMARY_FILE
 
       - name: Obtener repositoryId con GraphQL
         id: get_repo_id
@@ -53,7 +55,7 @@ jobs:
         uses: abirismyname/create-discussion@main   
         with:
           title: "Resumen de commits - ${{ steps.get_datetime.outputs.now }}"
-          body-filepath: resumen.md
+          body-filepath: $SUMMARY_FILE
           repository-id: ${{ steps.get_repo_id.outputs.repository_id }}
           category-id: ${{ secrets.DISCUSSION_CATEGORY_ID }}
           github-token: ${{ secrets.MY_PERSONAL_ACCESS_TOKEN }}
