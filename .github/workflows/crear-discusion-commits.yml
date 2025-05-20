@@ -11,30 +11,56 @@ jobs:
       - name: Checkout del repositorio
         uses: actions/checkout@v3
 
-      - name: Obtener últimos 5 commits y guardar en Markdown
+      - name: Obtener últimos 5 commits y guardar como Markdown
         run: |
-          echo "# Resumen de commits recientes" > resumen.md
+          echo "# Últimos 5 commits de la rama main" > resumen.md
           echo "" >> resumen.md
-          git log -n 5 --pretty=format:"- %h %s (%an, %ad)" --date=short >> resumen.md
+          git fetch origin main
+          git log origin/main -n 5 --pretty=format:"- %h %s (%an, %ad)" --date=short >> resumen.md
 
-      - name: Leer archivo Markdown y guardar contenido
-        id: leer_md
+      - name: Escapar contenido Markdown para JSON
+        id: preparar_body
         run: |
-          BODY=$(cat resumen.md | jq -Rs .)
+          BODY=$(jq -Rs . < resumen.md)
           echo "body=$BODY" >> $GITHUB_OUTPUT
 
-      - name: Crear discusión en GitHub
+      - name: Obtener repositoryId con GraphQL
+        id: get_repo_id
         env:
           GH_TOKEN: ${{ secrets.MY_PERSONAL_ACCESS_TOKEN }}
         run: |
-          echo ${{ github.repository }}
-          curl -X POST \
-            -H "Authorization: token ${GH_TOKEN}" \
-            -H "Accept: application/vnd.github.v3+json" \
-            https://api.github.com/repos/${{ github.repository }}/discussions \
-            -d 
+          REPO_OWNER=$(echo "${{ github.repository }}" | cut -d'/' -f1)
+          REPO_NAME=$(echo "${{ github.repository }}" | cut -d'/' -f2)
+
+          QUERY=$(cat <<EOF
           {
-            "title": "Resumen automático de commits - $(date +'%Y-%m-%d')",
-            "body": ${{ steps.leer_md.outputs.body }},
-            "category_id": "${{ secrets.DISCUSSION_CATEGORY_ID }}"
-          }
+            "query": "query { repository(owner: \\"$REPO_OWNER\\", name: \\"$REPO_NAME\\") { id } }"
+          } EOF
+          )
+
+          REPO_ID=$(curl -s -H "Authorization: bearer $GH_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d "$QUERY" \
+            https://api.github.com/graphql | jq -r '.data.repository.id')
+
+          echo "repository_id=$REPO_ID" >> $GITHUB_OUTPUT
+
+      - name: Crear discusión con resumen de commits
+        env:
+          GH_TOKEN: ${{ secrets.MY_PERSONAL_ACCESS_TOKEN }}
+          REPO_ID: ${{ steps.get_repo_id.outputs.repository_id }}
+          CATEGORY_ID: ${{ secrets.DISCUSSION_CATEGORY_ID }}
+        run: |
+          TITLE="Resumen de commits - $(date +'%Y-%m-%d %H:%M:%S')"
+          BODY=${{ steps.preparar_body.outputs.body }}
+
+          MUTATION=$(cat <<EOF
+          {
+            "query": "mutation { createDiscussion(input: { repositoryId: \\"$REPO_ID\\", categoryId: \\"$CATEGORY_ID\\", title: \\"$TITLE\\", body: $BODY }) { discussion { url } } }"
+          } EOF
+          )
+
+          curl -s -H "Authorization: bearer $GH_TOKEN" \
+               -H "Content-Type: application/json" \
+               -d "$MUTATION" \
+               https://api.github.com/graphql
