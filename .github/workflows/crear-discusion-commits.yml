@@ -21,8 +21,6 @@ jobs:
           echo "" >> resumen.md
           git fetch origin main
           git log origin/main -n 5 --pretty=format:"- %h %s (%an, %ad)" --date=short >> resumen.md
-          cat resumen.md
-          echo "body=$(cat VERSION)" >> $GITHUB_OUTPUT
 
       - name: Obtener repositoryId con GraphQL
         id: get_repo_id
@@ -55,7 +53,7 @@ jobs:
         uses: abirismyname/create-discussion@main   
         with:
           title: "Resumen de commits - ${{ steps.get_datetime.outputs.now }}"
-          body: ${{ steps.get_commits.outputs.body }}
+          body-filepath: resumen.md
           repository-id: ${{ steps.get_repo_id.outputs.repository_id }}
           category-id: ${{ secrets.DISCUSSION_CATEGORY_ID }}
           github-token: ${{ secrets.MY_PERSONAL_ACCESS_TOKEN }}
